@@ -1,7 +1,7 @@
 {
   "name": "bluesky-messenger",
   "version": "0.1.0",
-   "private": true,
+  "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
@@ -10,8 +10,9 @@
   },
   "dependencies": {
     "@atproto/api": "^0.5.0",
+    "@fastify/cookie": "^9.2.0",
+    "@fastify/cors": "^8.4.1",
     "fastify": "^4.25.0",
-    "fastify-cors": "^8.4.1",
     "next": "14.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
