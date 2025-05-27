@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (session) {
                 localStorage.setItem('bsky_session', JSON.stringify(session));
               }
-            } else if (evt === 'expired' || evt === 'delete' || evt === 'create-failed') {
+            } else if (['expired', 'delete', 'create-failed'].includes(evt)) {
               localStorage.removeItem('bsky_session');
               setIsAuthenticated(false);
               setUser(null);
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (session) {
               localStorage.setItem('bsky_session', JSON.stringify(session));
             }
-          } else if (evt === 'expired' || evt === 'delete' || evt === 'create-failed') {
+          } else if (['expired', 'delete', 'create-failed'].includes(evt)) {
             localStorage.removeItem('bsky_session');
             setIsAuthenticated(false);
             setUser(null);
@@ -208,10 +208,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-// Custom hook for using the auth context
-export const useAuth = () => useContext(AuthContext);
-
 
 // Custom hook for using the auth context
 export const useAuth = () => useContext(AuthContext);

@@ -1,5 +1,13 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
 
+declare module 'fastify' {
+    interface FastifyRequest {
+        user?: {
+            did: string;
+        };
+    }
+}
+
 // Types for our messages
 interface EncryptedMessage {
     nonce: string;
