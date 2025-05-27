@@ -1,0 +1,505 @@
+/* frontend/components/auth/LoginBox.module.css */
+
+.pageContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.backgroundDecoration {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.1) 25%, rgba(29, 78, 216, 0) 50%);
+  z-index: 0;
+  animation: pulse 15s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.loginContainer {
+  width: 100%;
+  max-width: 28rem;
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  z-index: 10;
+  position: relative;
+  animation: fadeIn 0.5s ease-out forwards;
+  transform-origin: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.exitAnimation {
+  animation: fadeOut 0.5s ease-in forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+  }
+}
+
+.logoContainer {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  width: 4rem;
+  height: 4rem;
+  background-color: #dbeafe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, rgba(219, 234, 254, 0), rgba(219, 234, 254, 1), rgba(219, 234, 254, 0));
+  animation: shimmer 3s infinite linear;
+  transform: rotate(45deg);
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%) rotate(45deg); }
+  to { transform: translateX(100%) rotate(45deg); }
+}
+
+.logoIcon {
+  width: 2rem;
+  height: 2rem;
+  color: #3b82f6;
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.errorMessage {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  transform: translate3d(0, 0, 0);
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+  40%, 60% { transform: translate3d(3px, 0, 0); }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.privacyContainer {
+  margin-top: 0.5rem;
+}
+
+.privacyToggle {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: #4b5563;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+  transition: color 0.2s;
+}
+
+.privacyToggle:hover {
+  color: #3b82f6;
+}
+
+.privacyContent {
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+.expanded {
+  padding: 0.75rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.privacyTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #4b5563;
+}
+
+.privacyText {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.25rem;
+  white-space: pre-line;
+}
+
+.submitButton {
+  margin-top: 1rem;
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 500;
+  padding: 0.625rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+
+.submitButton:hover {
+  background-color: #2563eb;
+}
+
+.submitButton:active {
+  transform: scale(0.98);
+}
+
+.submitButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.6s;
+}
+
+.submitButton:hover::before {
+  left: 100%;
+}
+
+.submitButton:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loadingCircle {
+  opacity: 0.25;
+}
+
+.loadingPath {
+  opacity: 0.75;
+}
+
+.signupContainer {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.signupText {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.signupLink {
+  color: #3b82f6;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+  position: relative;
+}
+
+.signupLink:hover {
+  color: #2563eb;
+}
+
+.signupLink::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background-color: #2563eb;
+  transform: scaleX(0);
+  transform-origin: bottom right;
+  transition: transform 0.3s;
+}
+
+.signupLink:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .pageContainer {
+    background-color: #111827;
+  }
+  
+  .backgroundDecoration {
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.15) 25%, rgba(29, 78, 216, 0) 50%);
+  }
+  
+  .loginContainer {
+    background-color: #1f2937;
+  }
+  
+  .logo {
+    background-color: #1e3a8a;
+  }
+  
+  .logoIcon {
+    color: #60a5fa;
+  }
+  
+  .title {
+    color: #f9fafb;
+  }
+  
+  .subtitle {
+    color: #9ca3af;
+  }
+  
+  .errorMessage {
+    background-color: rgba(220, 38, 38, 0.2);
+    color: #fca5a5;
+  }
+  
+  .label {
+    color: #d1d5db;
+  }
+  
+  .input {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  }
+  
+  .input::placeholder {
+    color: #6b7280;
+  }
+  
+  .privacyToggle {
+    color: #d1d5db;
+  }
+  
+  .privacyToggle:hover {
+    color: #60a5fa;
+  }
+  
+  .privacyContent {
+    background-color: #374151;
+  }
+  
+  .privacyTitle {
+    color: #e5e7eb;
+  }
+  
+  .privacyText {
+    color: #9ca3af;
+  }
+  
+  .submitButton:disabled {
+    background-color: #1e40af;
+  }
+  
+  .signupText {
+    color: #9ca3af;
+  }
+  
+  .signupLink {
+    color: #60a5fa;
+  }
+  
+  .signupLink:hover {
+    color: #93c5fd;
+  }
+  
+  .signupLink::after {
+    background-color: #93c5fd;
+  }
+  .debugInfo {
+    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    background-color: #1a2e44;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .debugInfo details {
+    width: 100%;
+  }
+
+  .debugInfo summary {
+    padding: 0.5rem;
+    cursor: pointer;
+    background-color: #1e3a8a;
+    color: #cbd5e1;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+  }
+
+  .debugInfo summary:hover {
+    background-color: #1e40af;
+  }
+
+  .debugInfo summary::before {
+    content: '🔍';
+    margin-right: 0.5rem;
+  }
+
+  .debugInfo pre {
+    padding: 0.75rem;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #94a3b8;
+    font-family: monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .buttonGroup {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .submitButton {
+    flex: 1;
+  }
+
+  .demoButton {
+    padding: 0.625rem;
+    background-color: #475569;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+
+  .demoButton:hover {
+    background-color: #334155;
+  }
+
+  .demoButton:active {
+    transform: scale(0.98);
+  }
+
+  .demoButton:disabled {
+    background-color: #64748b;
+    cursor: not-allowed;
+  }
+}

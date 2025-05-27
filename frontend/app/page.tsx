@@ -1,34 +1,41 @@
-  // File: frontend/app/page.tsx
-  'use client';
+'use client';
 
-  import { useEffect } from 'react';
-  import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import styles from './HomePage.module.css';
 
-  export default function Home(): JSX.Element {
-    const router = useRouter();
+export default function HomePage(): JSX.Element {
+  const router = useRouter();
 
-    // Redirect to login page after a brief display of the landing page
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        router.push('/login_init');
-      }, 2000);
+  // Redirect to login page after animation completes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push('/login');
+    }, 3000); // Time for animation to complete
 
-      return () => clearTimeout(timer);
-    }, [router]);
+    return () => clearTimeout(timer);
+  }, [router]);
 
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-        <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-6 relative">
-            <div className="absolute inset-0 rounded-full bg-blue-100 dark:bg-blue-900 animate-pulse"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
+  return (
+    <div className={styles.container}>
+      <div className={styles.backgroundCircles}>
+        <div className={`${styles.circle} ${styles.circle1}`}></div>
+        <div className={`${styles.circle} ${styles.circle2}`}></div>
+        <div className={`${styles.circle} ${styles.circle3}`}></div>
+      </div>
+
+      <div className={styles.content}>
+        <div className={styles.logoContainer}>
+          <div className={styles.logoWrap}>
+            <div className={styles.logoPulse}></div>
+            <div className={styles.logo}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="w-12 h-12 text-blue-600 dark:text-blue-300"
+                className={styles.logoIcon}
               >
                 <path
                   strokeLinecap="round"
@@ -38,13 +45,18 @@
               </svg>
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Bluesky Messenger
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Private messaging for the decentralized social network
-          </p>
+        </div>
+
+        <h1 className={styles.title}>Bluesky Messenger</h1>
+
+        <p className={styles.subtitle}>
+          Private messaging for the decentralized social network
+        </p>
+
+        <div className={styles.loadingBar}>
+          <div className={styles.loadingProgress}></div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
