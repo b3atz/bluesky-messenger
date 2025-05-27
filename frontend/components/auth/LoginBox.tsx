@@ -21,7 +21,6 @@ All messages are end-to-end encrypted and cannot be read by our servers.
 Your encryption keys are generated locally and stored only on your device.
 `;
 
-
 export default function LoginBox() {
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
@@ -106,8 +105,8 @@ export default function LoginBox() {
                 <Image
                     src="/bluesky-logo.svg"
                     alt="Bluesky Messenger"
-                    width={64}
-                    height={64}
+                    width={128}
+                    height={128}
                     className="mx-auto"
                     priority
                 />
@@ -137,7 +136,7 @@ export default function LoginBox() {
                             type="text"
                             required
                             value={identifier}
-                            onChange={(e) => setIdentifier(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value)}
                             className="w-full px-3 py-2 mt-1 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:border-gray-600"
                             placeholder="username.bsky.social"
                         />
@@ -153,7 +152,7 @@ export default function LoginBox() {
                             type="password"
                             required
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                             className="w-full px-3 py-2 mt-1 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:border-gray-600"
                             placeholder="••••••••"
                         />

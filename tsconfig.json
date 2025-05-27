@@ -20,6 +20,6 @@
       "@utils/*": ["frontend/utils/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "backend/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "backend/**/*.ts", "next.config.js", "backend/server.js", "backend/routes/auth.js", "backend/routes/messages.js"],
   "exclude": ["node_modules"]
 }
