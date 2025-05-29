@@ -42,4 +42,4 @@ next-env.d.ts
 node_modules
 dist
 *.log
-db/sqlite.db
+data
