@@ -1,0 +1,47 @@
+/* public/styles.css */
+
+/* Basic styling for testing */
+.test-heading {
+    font-size: 24px;
+    font-weight: bold;
+    color: blue;
+    margin-bottom: 16px;
+  }
+  
+  .test-text {
+    color: #333;
+    margin-bottom: 16px;
+  }
+  
+  .test-box {
+    padding: 12px;
+    margin: 8px;
+    border-radius: 4px;
+    color: white;
+    display: inline-block;
+  }
+  
+  .box-blue { background-color: blue; }
+  .box-green { background-color: green; }
+  .box-red { background-color: red; }
+  .box-yellow { background-color: #f59e0b; }
+  
+  .test-button {
+    background-color: #3b82f6;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    margin-top: 16px;
+  }
+  
+  .test-button:hover {
+    background-color: #2563eb;
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }

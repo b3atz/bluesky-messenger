@@ -1,0 +1,60 @@
+/* frontend/app/css_test/styles.module.css */
+.heading {
+    font-size: 24px;
+    font-weight: bold;
+    color: blue;
+    margin-bottom: 16px;
+  }
+  
+  .text {
+    color: #333;
+    margin-bottom: 16px;
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .boxContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  
+  .box {
+    padding: 12px;
+    border-radius: 4px;
+    color: white;
+  }
+  
+  .blueBox {
+    background-color: blue;
+  }
+  
+  .greenBox {
+    background-color: green;
+  }
+  
+  .redBox {
+    background-color: red;
+  }
+  
+  .yellowBox {
+    background-color: #f59e0b;
+  }
+  
+  .button {
+    background-color: #3b82f6;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+  }
+  
+  .button:hover {
+    background-color: #2563eb;
+  }
