@@ -11,14 +11,14 @@ async function bootstrap() {
     const orm = await MikroORM.init(config);
 
     
-    //await orm.getMigrator().up();
+    await orm.getMigrator().up();
 
-    /*const postCount = await orm.em.count('Post');
+    const postCount = await orm.em.count('Post');
     if (postCount === 0) {
       const seeder = orm.getSeeder();
       await seeder.seed(PostSeeder);
       console.log('Seeded initial post data');
-    }*/
+    }
 
     
     await app.listen({

@@ -3,8 +3,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
-import LoginBox from '../../components/auth/LoginBox';
+import { useAuth } from 'contexts/AuthContext';
+import LoginBox from 'components/auth/LoginBox';
 
 export default function LoginPage(): JSX.Element {
   const { isAuthenticated, loading } = useAuth();

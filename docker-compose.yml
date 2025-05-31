@@ -11,3 +11,10 @@ services:
       PASSWORD: password
     ports:
       - "8080:8080"
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
