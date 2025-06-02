@@ -75,18 +75,6 @@ const app = Fastify({
 console.log('🚀 Starting Enhanced Bluesky Messenger Backend...');
 
 // CORS configuration - more permissive for Heroku
-const corsOrigins = [];
-if (process.env.NODE_ENV === 'development') {
-	corsOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
-} else {
-	// In production, allow same origin and common deployment URLs
-	corsOrigins.push(
-		'https://*.herokuapp.com',
-		'https://*.vercel.app',
-		process.env.FRONTEND_URL || 'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com'
-	);
-}
-
 await app.register(cors, {
 	origin: (origin, callback) => {
 		// Allow requests with no origin (mobile apps, Postman, etc)
@@ -97,16 +85,17 @@ await app.register(cors, {
 			return callback(null, true);
 		}
 
-		// Check against allowed origins
-		const allowed = corsOrigins.some(allowedOrigin => {
-			if (allowedOrigin.includes('*')) {
-				const pattern = allowedOrigin.replace('*', '.*');
-				return new RegExp(pattern).test(origin);
-			}
-			return origin === allowedOrigin;
-		});
+		// Development - allow localhost
+		if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+			return callback(null, true);
+		}
 
-		callback(null, allowed);
+		// Allow Heroku domains
+		if (origin.includes('herokuapp.com') || origin.includes('vercel.app')) {
+			return callback(null, true);
+		}
+
+		callback(null, false);
 	},
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -127,41 +116,89 @@ await app.register(formbody);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-	// Register static file serving
-	await app.register(import('@fastify/static'), {
-		root: join(__dirname, '../../frontend/dist'),
-		prefix: '/',
-		constraints: {
-			// Don't serve static files for API routes
-			host: /^(?!.*\/(api|auth|dm|posts|health))/
-		}
-	});
+	// Try multiple possible frontend build locations
+	const possibleFrontendPaths = [
+		join(__dirname, 'frontend'),
+		join(__dirname, '../frontend/out'),
+		join(__dirname, '../../frontend/out'),
+		join(__dirname, 'public'),
+		join(__dirname, '../public')
+	];
 
-	// Register rate limit plugin
-	const rateLimit = (await import('@fastify/rate-limit')).default;
-	await app.register(rateLimit, {
-		global: false // Only use rate limit where needed
-	});
-
-	// Custom handler for frontend routes
-	app.setNotFoundHandler(async (request, reply) => {
-		// If it's an API route, return 404
-		if (request.url.startsWith('/api') ||
-			request.url.startsWith('/auth') ||
-			request.url.startsWith('/dm') ||
-			request.url.startsWith('/posts') ||
-			request.url.startsWith('/health')) {
-			return reply.code(404).send({ error: 'API endpoint not found' });
+	let frontendPath = null;
+	for (const path of possibleFrontendPaths) {
+		if (fs.existsSync(path)) {
+			frontendPath = path;
+			console.log(`✅ Found frontend files at: ${path}`);
+			break;
 		}
+	}
 
-		// For all other routes, serve the React app
-		const indexPath = join(__dirname, '../../frontend/dist/index.html');
-		if (fs.existsSync(indexPath)) {
-			return reply.type('text/html').sendFile('index.html');
-		} else {
-			return reply.code(404).send({ error: 'Frontend not found' });
-		}
-	});
+	if (frontendPath) {
+		// Register static file serving
+		await app.register(import('@fastify/static'), {
+			root: frontendPath,
+			prefix: '/',
+		});
+
+		// Serve index.html for client-side routing
+		app.setNotFoundHandler(async (request, reply) => {
+			// If it's an API route, return 404
+			if (request.url.startsWith('/api') ||
+				request.url.startsWith('/auth') ||
+				request.url.startsWith('/dm') ||
+				request.url.startsWith('/posts') ||
+				request.url.startsWith('/health')) {
+				return reply.code(404).send({ error: 'API endpoint not found' });
+			}
+
+			// For all other routes, serve the React app
+			const indexPath = join(frontendPath, 'index.html');
+			if (fs.existsSync(indexPath)) {
+				return reply.type('text/html').sendFile('index.html');
+			} else {
+				return reply.code(404).send({ error: 'Frontend not found' });
+			}
+		});
+	} else {
+		console.warn('⚠️ No frontend files found. API-only mode.');
+
+		// Serve a simple HTML page for the root route
+		app.get('/', async (request, reply) => {
+			return reply.type('text/html').send(`
+				<!DOCTYPE html>
+				<html>
+				<head>
+					<title>Bluesky Messenger API</title>
+					<style>
+						body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+						.status { padding: 10px; border-radius: 5px; margin: 10px 0; }
+						.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+						.info { background: #d1ecf1; color: #0c5460; border: 1px solid #b8daff; }
+					</style>
+				</head>
+				<body>
+					<h1>🚀 Bluesky Messenger API</h1>
+					<div class="status success">✅ Backend is running successfully!</div>
+					<div class="status info">ℹ️ Frontend not found - API endpoints are available</div>
+					
+					<h2>Available Endpoints:</h2>
+					<ul>
+						<li><strong>GET /health</strong> - API health check</li>
+						<li><strong>POST /auth/login</strong> - User authentication</li>
+						<li><strong>GET /dm</strong> - Get messages</li>
+						<li><strong>POST /dm</strong> - Send message</li>
+						<li><strong>GET /posts</strong> - Get posts</li>
+						<li><strong>POST /posts</strong> - Create post</li>
+					</ul>
+					
+					<p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
+					<p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+				</body>
+				</html>
+			`);
+		});
+	}
 }
 
 // Enhanced auth middleware that supports both simple and Bluesky sessions

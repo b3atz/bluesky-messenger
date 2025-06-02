@@ -1,32 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-
-  // Use static export for production build (served by backend)
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
-
-  // Disable image optimization for static export
+  // Enable static export for Heroku deployment
+  output: 'export',
+  trailingSlash: true,
   images: {
     unoptimized: true,
   },
-
-  // Set trailing slash to false
-  trailingSlash: false,
-
-  // Skip build step in development
+  // Disable server-side features for static export
   generateBuildId: async () => {
-    return 'build-' + Date.now();
+    return 'bluesky-messenger-v1'
   },
-
-  // Environment variables
+  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  basePath: '',
   env: {
-    CUSTOM_KEY: 'value',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   },
-
-  // Webpack configuration for compatibility
   webpack: (config, { isServer }) => {
-    // Fixes npm packages that depend on `fs` module
+    // Handle ES modules
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -36,38 +26,8 @@ const nextConfig = {
         crypto: false,
       };
     }
-
     return config;
   },
+}
 
-  // In development, proxy API requests to backend
-  async rewrites() {
-    if (process.env.NODE_ENV === 'development') {
-      return [
-        {
-          source: '/api/:path*',
-          destination: 'http://localhost:3001/api/:path*',
-        },
-        {
-          source: '/auth/:path*',
-          destination: 'http://localhost:3001/auth/:path*',
-        },
-        {
-          source: '/dm/:path*',
-          destination: 'http://localhost:3001/dm/:path*',
-        },
-        {
-          source: '/posts/:path*',
-          destination: 'http://localhost:3001/posts/:path*',
-        },
-        {
-          source: '/health',
-          destination: 'http://localhost:3001/health',
-        },
-      ];
-    }
-    return [];
-  },
-};
-
-module.exports = nextConfig;
+module.exports = nextConfig
