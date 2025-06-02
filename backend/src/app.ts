@@ -74,7 +74,8 @@ const app = Fastify({
 
 console.log('🚀 Starting Enhanced Bluesky Messenger Backend...');
 
-// FIXED CORS CONFIGURATION - Let the plugin handle OPTIONS automatically
+// In your backend/src/app.ts, update the CORS configuration:
+
 await app.register(cors, {
 	origin: (origin, callback) => {
 		// Always allow requests with no origin (mobile apps, curl, etc.)
@@ -83,12 +84,12 @@ await app.register(cors, {
 			return callback(null, true);
 		}
 
-		// List of explicitly allowed origins
+		// List of explicitly allowed origins - ADD BOTH YOUR DOMAINS
 		const allowedOrigins = [
 			'http://localhost:3000',
 			'http://127.0.0.1:3000',
-			'https://bluesky-privacy-project-c14177203721.herokuapp.com',
-			'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com'
+			'https://bluesky-privacy-project-c14177203721.herokuapp.com',  // Your frontend
+			'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com'   // Your backend
 		];
 
 		// Check exact match first
@@ -111,7 +112,7 @@ await app.register(cors, {
 
 		// Log and reject unknown origins
 		console.log(`❌ CORS: Blocking origin: ${origin}`);
-		return callback(null, false); // Don't throw error, just return false
+		return callback(null, false);
 	},
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
@@ -126,9 +127,9 @@ await app.register(cors, {
 		'Referer',
 		'User-Agent'
 	],
-	optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-	preflightContinue: false, // Let CORS plugin handle preflight completely
-	maxAge: 86400 // Cache preflight for 24 hours
+	optionsSuccessStatus: 200,
+	preflightContinue: false,
+	preflight: true
 });
 
 await app.register(cookie, {
