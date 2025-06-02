@@ -10,13 +10,20 @@ export const getApiUrl = (): string => {
         return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    // In production, assume same origin (Heroku serves both frontend and backend)
+    // **FIX: Use your specific backend Heroku URL**
     if (typeof window !== 'undefined') {
+        // Check if we're on the frontend-only Heroku app
+        if (window.location.origin.includes('bluesky-privacy-project-c14177203721.herokuapp.com')) {
+            // Point to your backend Heroku app
+            return 'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com';
+        }
+
+        // Otherwise, assume same origin
         return window.location.origin;
     }
 
-    // Fallback for server-side rendering
-    return '';
+    // Fallback for server-side rendering - use your backend URL
+    return 'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com';
 };
 
 export const API_URL = getApiUrl();
@@ -29,7 +36,10 @@ export const checkBackendHealth = async (): Promise<'connected' | 'failed' | 'co
 
         const response = await fetch(`${API_URL}/health`, {
             signal: controller.signal,
-            headers: { 'Cache-Control': 'no-cache' },
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Accept': 'application/json',
+            },
             credentials: 'include'
         });
 

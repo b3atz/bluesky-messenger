@@ -74,32 +74,42 @@ const app = Fastify({
 
 console.log('🚀 Starting Enhanced Bluesky Messenger Backend...');
 
-// CORS configuration - more permissive for Heroku
+// Update the CORS section in your backend/src/app.ts file:
+
 await app.register(cors, {
 	origin: (origin, callback) => {
 		// Allow requests with no origin (mobile apps, Postman, etc)
 		if (!origin) return callback(null, true);
 
-		// In production on Heroku, allow same-origin requests
-		if (process.env.NODE_ENV === 'production') {
+		// List of allowed origins
+		const allowedOrigins = [
+			'http://localhost:3000',
+			'http://127.0.0.1:3000',
+			'https://bluesky-privacy-project-c14177203721.herokuapp.com',
+			'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com'
+		];
+
+		// Check if origin is in allowed list
+		if (allowedOrigins.includes(origin)) {
 			return callback(null, true);
 		}
 
-		// Development - allow localhost
+		// Allow any Heroku domain for development
+		if (origin.includes('herokuapp.com')) {
+			return callback(null, true);
+		}
+
+		// Allow localhost variations
 		if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
 			return callback(null, true);
 		}
 
-		// Allow Heroku domains
-		if (origin.includes('herokuapp.com') || origin.includes('vercel.app')) {
-			return callback(null, true);
-		}
-
-		callback(null, false);
+		console.log('CORS blocked origin:', origin);
+		callback(new Error('Not allowed by CORS'), false);
 	},
 	credentials: true,
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Accept', 'Cache-Control'],
 });
 
 await app.register(cookie, {
