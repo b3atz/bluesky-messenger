@@ -1,9 +1,16 @@
-// src/app.ts - Fixed version without problematic imports
+// backend/src/app.ts - Updated to serve frontend in production
 import Fastify from "fastify";
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import formbody from '@fastify/formbody';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import fs from 'fs';
+
+// Get current directory for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Simple in-memory storage for sessions (in production, use Redis or database)
 interface User {
@@ -51,29 +58,111 @@ const messages = new Map<string, Message>();
 const posts = new Map<string, PostData>();
 
 const app = Fastify({
-	logger: {
-		transport: {
-			target: 'pino-pretty',
-			options: {
-				translateTime: 'HH:MM:ss Z',
-				ignore: 'pid,hostname',
+	logger: process.env.NODE_ENV === 'production'
+		? true  // Simple logging for production
+		: {     // Pretty logging for development
+			transport: {
+				target: 'pino-pretty',
+				options: {
+					translateTime: 'HH:MM:ss Z',
+					ignore: 'pid,hostname',
+				},
 			},
-		},
-		level: "info",
-	}
+			level: "info",
+		}
 });
 
 console.log('🚀 Starting Enhanced Bluesky Messenger Backend...');
 
-// Register plugins
+// CORS configuration - more permissive for Heroku
+const corsOrigins = [];
+if (process.env.NODE_ENV === 'development') {
+	corsOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+} else {
+	// In production, allow same origin and common deployment URLs
+	corsOrigins.push(
+		'https://*.herokuapp.com',
+		'https://*.vercel.app',
+		process.env.FRONTEND_URL || 'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com'
+	);
+}
+
 await app.register(cors, {
-	origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+	origin: (origin, callback) => {
+		// Allow requests with no origin (mobile apps, Postman, etc)
+		if (!origin) return callback(null, true);
+
+		// In production on Heroku, allow same-origin requests
+		if (process.env.NODE_ENV === 'production') {
+			return callback(null, true);
+		}
+
+		// Check against allowed origins
+		const allowed = corsOrigins.some(allowedOrigin => {
+			if (allowedOrigin.includes('*')) {
+				const pattern = allowedOrigin.replace('*', '.*');
+				return new RegExp(pattern).test(origin);
+			}
+			return origin === allowedOrigin;
+		});
+
+		callback(null, allowed);
+	},
 	credentials: true,
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 });
 
-await app.register(cookie);
+await app.register(cookie, {
+	secret: process.env.COOKIE_SECRET || 'bluesky-messenger-secret-key-change-in-production',
+	parseOptions: {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+		path: '/'
+	}
+});
+
 await app.register(formbody);
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+	// Register static file serving
+	await app.register(import('@fastify/static'), {
+		root: join(__dirname, '../../frontend/dist'),
+		prefix: '/',
+		constraints: {
+			// Don't serve static files for API routes
+			host: /^(?!.*\/(api|auth|dm|posts|health))/
+		}
+	});
+
+	// Register rate limit plugin
+	const rateLimit = (await import('@fastify/rate-limit')).default;
+	await app.register(rateLimit, {
+		global: false // Only use rate limit where needed
+	});
+
+	// Custom handler for frontend routes
+	app.setNotFoundHandler(async (request, reply) => {
+		// If it's an API route, return 404
+		if (request.url.startsWith('/api') ||
+			request.url.startsWith('/auth') ||
+			request.url.startsWith('/dm') ||
+			request.url.startsWith('/posts') ||
+			request.url.startsWith('/health')) {
+			return reply.code(404).send({ error: 'API endpoint not found' });
+		}
+
+		// For all other routes, serve the React app
+		const indexPath = join(__dirname, '../../frontend/dist/index.html');
+		if (fs.existsSync(indexPath)) {
+			return reply.type('text/html').sendFile('index.html');
+		} else {
+			return reply.code(404).send({ error: 'Frontend not found' });
+		}
+	});
+}
 
 // Enhanced auth middleware that supports both simple and Bluesky sessions
 const authenticate = async (request: any, reply: any) => {
@@ -97,7 +186,7 @@ const authenticate = async (request: any, reply: any) => {
 	}
 
 	request.user = user;
-	request.sessionData = session.blueskySession || user; // Include Bluesky session data if available
+	request.sessionData = session.blueskySession || user;
 	app.log.info(`Authenticated: ${user.handle}`);
 };
 
@@ -106,6 +195,7 @@ app.get('/health', async () => ({
 	status: 'ok',
 	timestamp: new Date().toISOString(),
 	server: 'Enhanced Bluesky Messenger',
+	environment: process.env.NODE_ENV || 'development',
 	features: ['E2EE DMs', 'Privacy-Aware Posts', 'AT Protocol Integration'],
 	stats: {
 		users: users.size,
@@ -150,13 +240,13 @@ app.post('/auth/login', async (request, reply) => {
 	};
 	sessions.set(sessionId, sessionData);
 
-	// Set cookie
+	// Set cookie with environment-appropriate settings
 	reply.setCookie('bluesky_session_id', sessionId, {
 		httpOnly: true,
-		secure: false,
-		sameSite: 'lax',
+		secure: process.env.NODE_ENV === 'production',
+		sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 		path: '/',
-		maxAge: 60 * 60 * 24 * 7
+		maxAge: 60 * 60 * 24 * 7 // 7 days
 	});
 
 	app.log.info(`Enhanced session created: ${sessionId.substring(0, 8)}... for ${handle}`);
@@ -169,8 +259,6 @@ app.post('/auth/login', async (request, reply) => {
 	};
 });
 
-// Add this right after your /auth/logout route in app.ts (around line 150)
-
 app.post('/auth/logout', { preHandler: authenticate }, async (request, reply) => {
 	const sessionId = request.cookies?.bluesky_session_id;
 	if (sessionId) {
@@ -180,7 +268,7 @@ app.post('/auth/logout', { preHandler: authenticate }, async (request, reply) =>
 	return { success: true };
 });
 
-// ADD THIS NEW DEBUG ENDPOINT RIGHT HERE:
+// Debug endpoint
 app.get('/auth/debug', async (request, reply) => {
 	const sessionId = request.cookies?.bluesky_session_id;
 
@@ -221,88 +309,12 @@ app.get('/auth/debug', async (request, reply) => {
 			handle: user.handle
 		},
 		hasTokens: !!(user.accessJwt && user.refreshJwt),
-		tokenInfo: {
-			accessJwtLength: user.accessJwt?.length || 0,
-			refreshJwtLength: user.refreshJwt?.length || 0,
-			accessJwtPreview: user.accessJwt ? user.accessJwt.substring(0, 50) + '...' : 'none',
-			refreshJwtPreview: user.refreshJwt ? user.refreshJwt.substring(0, 50) + '...' : 'none'
-		},
 		sessionAge: Math.floor((Date.now() - new Date(session.createdAt).getTime()) / 1000),
 		blueskySession: !!session.blueskySession
 	};
 });
 
-// ADD THIS TEST ENDPOINT TOO:
-app.get('/posts/test-bluesky', { preHandler: authenticate }, async (request: any, reply) => {
-	const user = request.user;
-
-	if (!user.accessJwt || !user.refreshJwt) {
-		return {
-			success: false,
-			error: 'No AT Protocol tokens available',
-			hasTokens: false,
-			message: 'Session exists but missing Bluesky tokens - cannot post to Bluesky',
-			user: {
-				did: user.did,
-				handle: user.handle
-			}
-		};
-	}
-
-	try {
-		// Import BskyAgent dynamically to avoid import issues
-		const { BskyAgent } = await import('@atproto/api');
-
-		// Test by creating a Bluesky agent and getting profile
-		const agent = new BskyAgent({
-			service: 'https://bsky.social'
-		});
-
-		// Resume the session with stored tokens
-		await agent.resumeSession({
-			did: user.did,
-			handle: user.handle,
-			accessJwt: user.accessJwt,
-			refreshJwt: user.refreshJwt,
-			active: true
-		});
-
-		// Test by getting the user's profile
-		const profile = await agent.getProfile({ actor: user.did });
-
-		return {
-			success: true,
-			message: '🎉 AT Protocol integration is working! You can post to Bluesky!',
-			profile: {
-				handle: profile.data.handle,
-				displayName: profile.data.displayName,
-				followersCount: profile.data.followersCount,
-				followsCount: profile.data.followsCount,
-				postsCount: profile.data.postsCount
-			},
-			tokens: {
-				hasAccessJwt: !!user.accessJwt,
-				hasRefreshJwt: !!user.refreshJwt,
-				accessJwtLength: user.accessJwt.length,
-				refreshJwtLength: user.refreshJwt.length
-			}
-		};
-	} catch (error) {
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : 'Unknown error',
-			details: 'Failed to connect to AT Protocol - tokens may be invalid or expired',
-			hasTokens: !!(user.accessJwt && user.refreshJwt),
-			tokenLengths: {
-				accessJwt: user.accessJwt?.length || 0,
-				refreshJwt: user.refreshJwt?.length || 0
-			}
-		};
-	}
-});
-
-// Replace your existing /posts POST route in app.ts with this updated version:
-
+// Posts endpoint with AT Protocol integration
 app.post('/posts', { preHandler: authenticate }, async (request: any, reply) => {
 	const {
 		title,
@@ -310,14 +322,12 @@ app.post('/posts', { preHandler: authenticate }, async (request: any, reply) => 
 		accessLevel = 'public',
 		privacyTechnique = 'None',
 		privacyScore = 0,
-		allowedDids = []
 	} = request.body as {
 		title: string;
 		content: string;
 		accessLevel?: 'public' | 'followers' | 'friends' | 'private';
 		privacyTechnique?: string;
 		privacyScore?: number;
-		allowedDids?: string[];
 	};
 
 	const user = request.user;
@@ -335,7 +345,6 @@ app.post('/posts', { preHandler: authenticate }, async (request: any, reply) => 
 			createdAt: new Date().toISOString()
 		};
 
-		// Save to local storage first
 		posts.set(postId, post);
 
 		let atProtocolUri = null;
@@ -343,18 +352,10 @@ app.post('/posts', { preHandler: authenticate }, async (request: any, reply) => 
 
 		// Only publish public posts to Bluesky
 		if (accessLevel === 'public' && user.accessJwt && user.refreshJwt) {
-			app.log.info('🚀 Attempting to publish to Bluesky...');
-
 			try {
-				// Import BskyAgent dynamically
 				const { BskyAgent } = await import('@atproto/api');
+				const agent = new BskyAgent({ service: 'https://bsky.social' });
 
-				// Create Bluesky agent
-				const agent = new BskyAgent({
-					service: 'https://bsky.social'
-				});
-
-				// Resume the session with stored tokens
 				await agent.resumeSession({
 					did: user.did,
 					handle: user.handle,
@@ -363,59 +364,35 @@ app.post('/posts', { preHandler: authenticate }, async (request: any, reply) => 
 					active: true
 				});
 
-				// Prepare the post text (combine title and content)
 				const postText = title ? `${title}\n\n${content}` : content;
+				const truncatedText = postText.length > 300 ? postText.substring(0, 297) + '...' : postText;
 
-				// Ensure we don't exceed Bluesky's character limit (300 chars)
-				const truncatedText = postText.length > 300 ?
-					postText.substring(0, 297) + '...' : postText;
-
-				app.log.info(`📝 Publishing to Bluesky: "${truncatedText.substring(0, 50)}..."`);
-
-				// Actually post to Bluesky!
 				const blueskyResult = await agent.post({
 					text: truncatedText,
 					createdAt: new Date().toISOString()
 				});
 
 				atProtocolUri = blueskyResult.uri;
-				app.log.info(`✅ SUCCESS! Posted to Bluesky! URI: ${atProtocolUri}`);
-
-				// Update our local post with the Bluesky URI
 				post.atProtocolUri = atProtocolUri;
 				posts.set(postId, post);
 
+				app.log.info(`✅ Posted to Bluesky! URI: ${atProtocolUri}`);
 			} catch (publishError) {
 				blueskyError = publishError instanceof Error ? publishError.message : 'Unknown error';
 				app.log.error('❌ Error publishing to Bluesky:', publishError);
 			}
-		} else if (accessLevel === 'public') {
-			blueskyError = 'No AT Protocol tokens available';
-			app.log.warn('⚠️ Cannot publish to Bluesky: No tokens');
-		} else {
-			app.log.info(`🔒 Post marked as ${accessLevel}, not publishing to Bluesky`);
-		}
-
-		app.log.info(`Created post with access level: ${accessLevel}, Privacy: ${privacyTechnique}`);
-
-		// Build response message
-		let message = '';
-		if (accessLevel === 'public') {
-			if (atProtocolUri) {
-				message = '🎉 Published to Bluesky AND saved to private server!';
-			} else {
-				message = `⚠️ Saved to private server only (Bluesky error: ${blueskyError})`;
-			}
-		} else {
-			message = `🔒 Saved to private server only (${accessLevel} access)`;
 		}
 
 		const response: any = {
 			id: postId,
 			accessLevel,
 			privacyScore,
-			message,
-			success: true
+			success: true,
+			message: atProtocolUri
+				? '🎉 Published to Bluesky AND saved to private server!'
+				: accessLevel === 'public'
+					? `⚠️ Saved to private server only (Bluesky error: ${blueskyError})`
+					: `🔒 Saved to private server only (${accessLevel} access)`
 		};
 
 		if (atProtocolUri) {
@@ -424,7 +401,6 @@ app.post('/posts', { preHandler: authenticate }, async (request: any, reply) => 
 		}
 
 		return reply.code(201).send(response);
-
 	} catch (error) {
 		app.log.error('❌ Error creating post:', error);
 		return reply.code(500).send({
@@ -433,19 +409,15 @@ app.post('/posts', { preHandler: authenticate }, async (request: any, reply) => 
 		});
 	}
 });
+
+// Get posts
 app.get('/posts', { preHandler: authenticate }, async (request: any, reply) => {
 	const user = request.user;
 
 	try {
-		// For now, return all posts the user has access to
 		const userPosts = Array.from(posts.values()).filter(post => {
-			// User can see their own posts
 			if (post.did === user.did) return true;
-
-			// Public posts are visible to everyone
 			if (post.accessLevel === 'public') return true;
-
-			// For now, private/followers/friends posts are only visible to owner
 			return false;
 		});
 
@@ -458,10 +430,9 @@ app.get('/posts', { preHandler: authenticate }, async (request: any, reply) => {
 			privacyScore: post.privacyScore,
 			privacyTechnique: post.privacyTechnique,
 			isOwn: post.did === user.did,
-			createdAt: post.createdAt
+			createdAt: post.createdAt,
+			atProtocolUri: post.atProtocolUri
 		}));
-
-		app.log.info(`Returning ${formattedPosts.length} posts for user ${user.handle}`);
 
 		return {
 			posts: formattedPosts,
@@ -469,78 +440,16 @@ app.get('/posts', { preHandler: authenticate }, async (request: any, reply) => {
 			accessiblePosts: formattedPosts.length,
 			userDid: user.did
 		};
-
 	} catch (error) {
 		app.log.error('Error fetching posts:', error);
 		return reply.code(500).send({ error: 'Failed to fetch posts' });
 	}
 });
 
-app.get('/posts/:id', { preHandler: authenticate }, async (request: any, reply) => {
-	const { id } = request.params as { id: string };
-	const user = request.user;
-
-	try {
-		const post = posts.get(id);
-		if (!post) {
-			return reply.code(404).send({ error: 'Post not found' });
-		}
-
-		// Check access control
-		const hasAccess = post.did === user.did || post.accessLevel === 'public';
-
-		if (!hasAccess) {
-			return reply.code(403).send({
-				error: 'Access denied',
-				message: 'You do not have permission to view this post',
-				accessLevel: post.accessLevel
-			});
-		}
-
-		return {
-			id: post.id,
-			title: post.title,
-			content: post.content,
-			author: post.did,
-			accessLevel: post.accessLevel,
-			privacyScore: post.privacyScore,
-			privacyTechnique: post.privacyTechnique,
-			isOwn: post.did === user.did,
-			createdAt: post.createdAt
-		};
-
-	} catch (error) {
-		app.log.error('Error fetching post:', error);
-		return reply.code(500).send({ error: 'Failed to fetch post' });
-	}
-});
-
-app.delete('/posts/:id', { preHandler: authenticate }, async (request: any, reply) => {
-	const { id } = request.params as { id: string };
-	const user = request.user;
-
-	try {
-		const post = posts.get(id);
-		if (!post || post.did !== user.did) {
-			return reply.code(404).send({ error: 'Post not found or unauthorized' });
-		}
-
-		posts.delete(id);
-		app.log.info(`Deleted post ${id} by ${user.handle}`);
-
-		return { success: true };
-
-	} catch (error) {
-		app.log.error('Error deleting post:', error);
-		return reply.code(500).send({ error: 'Failed to delete post' });
-	}
-});
-
-// Legacy DM endpoints (keep for backward compatibility)
+// DM Routes (keeping existing functionality)
 app.get('/dm', { preHandler: authenticate }, async (request: any) => {
 	const userDid = request.user.did;
 
-	// Get conversations for user
 	const userConversations = Array.from(conversations.values())
 		.filter(conv => conv.participants.includes(userDid))
 		.sort((a, b) => {
@@ -549,7 +458,6 @@ app.get('/dm', { preHandler: authenticate }, async (request: any) => {
 			return new Date(bTime).getTime() - new Date(aTime).getTime();
 		});
 
-	// Convert to frontend format
 	const result = userConversations.map(conv => {
 		const otherParticipant = conv.participants.find(p => p !== userDid);
 		const otherUser = otherParticipant ? users.get(otherParticipant) : null;
@@ -567,7 +475,6 @@ app.get('/dm', { preHandler: authenticate }, async (request: any) => {
 		};
 	});
 
-	app.log.info(`Returning ${result.length} conversations for ${request.user.handle}`);
 	return result;
 });
 
@@ -579,9 +486,6 @@ app.post('/dm', { preHandler: authenticate }, async (request: any, reply) => {
 		return reply.code(400).send({ error: 'recipientDid and content required' });
 	}
 
-	app.log.info(`Message: ${request.user.handle} → ${recipientDid}`);
-
-	// Find or create conversation
 	const participants = [senderDid, recipientDid].sort();
 	let conversation = Array.from(conversations.values())
 		.find(conv =>
@@ -597,10 +501,8 @@ app.post('/dm', { preHandler: authenticate }, async (request: any, reply) => {
 			createdAt: new Date().toISOString()
 		};
 		conversations.set(conversationId, conversation);
-		app.log.info(`New conversation: ${conversationId.substring(0, 8)}...`);
 	}
 
-	// Create message
 	const messageId = crypto.randomUUID();
 	const message: Message = {
 		id: messageId,
@@ -616,8 +518,6 @@ app.post('/dm', { preHandler: authenticate }, async (request: any, reply) => {
 	conversation.lastMessage = message;
 	conversations.set(conversation.id, conversation);
 
-	app.log.info(`Message sent: ${messageId.substring(0, 8)}...`);
-
 	return reply.code(201).send({
 		success: true,
 		messageId,
@@ -626,79 +526,10 @@ app.post('/dm', { preHandler: authenticate }, async (request: any, reply) => {
 	});
 });
 
-app.get('/dm/:did', { preHandler: authenticate }, async (request: any) => {
-	const recipientDid = request.params.did;
-	const senderDid = request.user.did;
-
-	// Find conversation
-	const participants = [senderDid, recipientDid].sort();
-	const conversation = Array.from(conversations.values())
-		.find(conv =>
-			conv.participants.length === 2 &&
-			conv.participants.every(p => participants.includes(p))
-		);
-
-	if (!conversation) {
-		return [];
-	}
-
-	// Get messages
-	const conversationMessages = Array.from(messages.values())
-		.filter(msg => msg.conversationId === conversation.id)
-		.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-
-	const result = conversationMessages.map(msg => ({
-		id: msg.id,
-		from: msg.senderId,
-		to: msg.recipientId,
-		content: msg.content,
-		timestamp: msg.timestamp
-	}));
-
-	app.log.info(`Returning ${result.length} messages for conversation`);
-	return result;
-});
-
-app.delete('/dm/:conversationId', { preHandler: authenticate }, async (request: any, reply) => {
-	const conversationId = request.params.conversationId;
-	const userDid = request.user.did;
-
-	const conversation = conversations.get(conversationId);
-	if (!conversation || !conversation.participants.includes(userDid)) {
-		return reply.code(404).send({ error: 'Conversation not found' });
-	}
-
-	// Delete messages
-	const conversationMessages = Array.from(messages.entries())
-		.filter(([_, msg]) => msg.conversationId === conversationId);
-
-	conversationMessages.forEach(([msgId, _]) => messages.delete(msgId));
-	conversations.delete(conversationId);
-
-	app.log.info(`Deleted conversation ${conversationId} (${conversationMessages.length} messages)`);
-
-	return { success: true, deletedMessages: conversationMessages.length };
-});
-
 // Error handlers
 app.setErrorHandler((error, request, reply) => {
 	app.log.error(error);
 	reply.status(500).send({ error: 'Internal Server Error' });
-});
-
-app.setNotFoundHandler((request, reply) => {
-	app.log.warn(`404: ${request.method} ${request.url}`);
-	reply.status(404).send({ error: 'Route not found' });
-});
-
-// Startup
-app.ready().then(() => {
-	app.log.info('🚀 Enhanced server ready! Features:');
-	app.log.info('  📱 End-to-End Encrypted DMs');
-	app.log.info('  🔒 Privacy-Aware Posts with Access Control');
-	app.log.info('  🌐 In-Memory Storage (Demo Mode)');
-	app.log.info('Routes:');
-	console.log(app.printRoutes());
 });
 
 export default app;

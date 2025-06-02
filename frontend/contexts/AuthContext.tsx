@@ -1,4 +1,4 @@
-// File: frontend/contexts/AuthContext.tsx
+// frontend/contexts/AuthContext.tsx - Updated for Heroku deployment
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -26,6 +26,17 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Get API URL - in production, use same origin as frontend
+const getApiUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    // In browser, use current origin for API calls
+    return window.location.origin;
+  }
+
+  // Server-side fallback
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+};
+
 // Create the context with a default value
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
@@ -51,16 +62,17 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     console.log(`[Auth] ${message}`, data || '');
   };
 
-  // UPDATED: Helper function to register with backend - now sends full session data including tokens
+  // Helper function to register with backend - sends full session data including tokens
   const registerWithBackend = async (sessionData: AtpSessionData): Promise<boolean> => {
     try {
-      logAuth('Attempting backend registration with full session', {
+      const apiUrl = getApiUrl();
+      logAuth(`Attempting backend registration at ${apiUrl}`, {
         did: sessionData.did,
         handle: sessionData.handle,
         hasTokens: !!(sessionData.accessJwt && sessionData.refreshJwt)
       });
 
-      const response = await fetch('http://localhost:3001/auth/login', {
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,10 +80,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
         body: JSON.stringify({
           did: sessionData.did,
           handle: sessionData.handle,
-          accessJwt: sessionData.accessJwt,    // Now sending the actual tokens!
-          refreshJwt: sessionData.refreshJwt,  // Now sending the actual tokens!
-          email: sessionData.email || undefined,  // Handle optional email
-          active: true  // Default to active since AtpSessionData doesn't have this field
+          accessJwt: sessionData.accessJwt,
+          refreshJwt: sessionData.refreshJwt,
+          email: sessionData.email || undefined,
+          active: true
         }),
         credentials: 'include',
       });
@@ -85,7 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
         await new Promise(resolve => setTimeout(resolve, 1200));
 
         // Verify the session was created with AT Protocol capabilities
-        const verifyResponse = await fetch('http://localhost:3001/auth/debug', {
+        const verifyResponse = await fetch(`${apiUrl}/auth/debug`, {
           credentials: 'include'
         });
 
@@ -98,7 +110,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
             return true;
           } else if (verifyData.authenticated) {
             logAuth('⚠️ Backend session authenticated but no AT Protocol tokens');
-            return true; // Still consider it successful for basic functionality
+            return true;
           } else {
             logAuth('❌ Backend session not authenticated after registration');
             return false;
@@ -166,7 +178,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
           if (success) {
             logAuth(`Session valid for ${sessionData.handle}`);
 
-            // UPDATED: Register with backend using full session data
+            // Register with backend using full session data
             const backendSuccess = await registerWithBackend(sessionData);
 
             if (backendSuccess) {
@@ -206,7 +218,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     }
   }, [initialized]);
 
-  // UPDATED: Login function
+  // Login function
   const login = async (identifier: string, password: string): Promise<boolean> => {
     logAuth(`Login attempt for ${identifier}`);
     setLoading(true);
@@ -246,7 +258,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
           logAuth('Session saved to localStorage');
         }
 
-        // UPDATED: Register with backend using full session data
+        // Register with backend using full session data
         const backendSuccess = await registerWithBackend(newAgent.session!);
 
         if (!backendSuccess) {
@@ -290,8 +302,9 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
       // Also log out from our backend
       try {
-        logAuth('Attempting to logout from backend server');
-        await fetch('http://localhost:3001/auth/logout', {
+        const apiUrl = getApiUrl();
+        logAuth(`Attempting to logout from backend server at ${apiUrl}`);
+        await fetch(`${apiUrl}/auth/logout`, {
           method: 'POST',
           credentials: 'include',
         });

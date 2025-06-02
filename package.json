@@ -1,8 +1,30 @@
 {
-    "name": "bluesky-messanger",
-    "version": "0.1.0",
+    "name": "bluesky-messenger",
+    "version": "1.0.0",
+    "description": "Privacy-focused messaging client for Bluesky",
+    "main": "backend/dist/index.js",
     "type": "module",
+    "engines": {
+        "node": "20.x",
+        "npm": "10.x"
+    },
     "scripts": {
-        "fresh": "docker-compose down -v && docker-compose build --no-cache && docker-compose up"
-    }
+        "start": "node backend/dist/index.js",
+        "build": "npm run build:backend && npm run build:frontend",
+        "build:backend": "cd backend && npm install && npm run build",
+        "build:frontend": "cd frontend && npm install && npm run build",
+        "dev": "cd backend && npm run dev",
+        "dev:frontend": "cd frontend && npm run dev",
+        "heroku-postbuild": "npm run build",
+        "install:all": "cd backend && npm install && cd ../frontend && npm install"
+    },
+    "dependencies": {},
+    "keywords": [
+        "bluesky",
+        "messaging",
+        "privacy",
+        "e2e-encryption"
+    ],
+    "author": "Collin Werth, Aaron Bernard",
+    "license": "MIT"
 }
