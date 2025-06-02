@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_URL, checkBackendHealth } from '../../utils/api-config';
 import styles from './Messages.module.css';
 
 // Define types for better TypeScript support
@@ -46,9 +47,6 @@ interface Conversation {
   lastMessage?: LastMessage;
   unreadCount: number;
 }
-
-// Backend API URL - make sure this matches your backend server
-const API_URL = 'http://localhost:3001';
 
 // Connection status type
 type ConnectionStatus = 'connecting' | 'connected' | 'failed';
@@ -242,7 +240,7 @@ const Messages = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/dm', {
+      const response = await fetch(`${API_URL}/dm`, {
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
@@ -270,7 +268,7 @@ const Messages = () => {
             if (hasNewContent) {
               // Fetch messages for this conversation
               try {
-                const messagesResponse = await fetch(`http://localhost:3001/dm/${backendConv.participantDid}`, {
+                const messagesResponse = await fetch(`${API_URL}/dm/${backendConv.participantDid}`, {
                   credentials: 'include',
                   headers: {
                     'Accept': 'application/json',
@@ -510,47 +508,22 @@ const Messages = () => {
   };
 
   // Check backend health
-  const checkBackendHealth = async () => {
+  const checkBackendHealthStatus = async () => {
     try {
       logDebug('Checking backend health...');
       setBackendStatus('connecting');
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const status = await checkBackendHealth();
+      setBackendStatus(status);
 
-      const response = await fetch(`${API_URL}/health`, {
-        signal: controller.signal,
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
+      if (status === 'connected') {
         logDebug('Backend is healthy and connected');
-        setBackendStatus('connected');
       } else {
-        logDebug(`Backend health check failed: ${response.status} ${response.statusText}`);
-        setBackendStatus('failed');
+        logDebug('Backend health check failed');
       }
     } catch (error) {
-      try {
-        logDebug('Health endpoint failed, trying direct connection...');
-        const fallbackResponse = await fetch(`${API_URL}/`, {
-          method: 'HEAD',
-          signal: AbortSignal.timeout(2000)
-        });
-
-        if (fallbackResponse.ok || fallbackResponse.status === 404) {
-          logDebug('Backend is connected (fallback check)');
-          setBackendStatus('connected');
-        } else {
-          logDebug(`Backend fallback check failed: ${fallbackResponse.status}`);
-          setBackendStatus('failed');
-        }
-      } catch (fallbackError) {
-        logDebug(`Backend connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setBackendStatus('failed');
-      }
+      logDebug(`Backend connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setBackendStatus('failed');
     }
   };
 
@@ -627,9 +600,9 @@ const Messages = () => {
 
   // Check backend connection periodically
   useEffect(() => {
-    checkBackendHealth();
+    checkBackendHealthStatus();
     const intervalId = setInterval(() => {
-      checkBackendHealth();
+      checkBackendHealthStatus();
     }, 30000);
     return () => clearInterval(intervalId);
   }, []);
@@ -682,7 +655,7 @@ const Messages = () => {
         try {
           logDebug('🌐 Attempting to fetch from backend server...');
 
-          const response = await fetch('http://localhost:3001/dm', {
+          const response = await fetch(`${API_URL}/dm`, {
             credentials: 'include',
             headers: {
               'Accept': 'application/json',
@@ -713,7 +686,7 @@ const Messages = () => {
 
               for (const conv of processedConversations) {
                 try {
-                  const messagesResponse = await fetch(`http://localhost:3001/dm/${conv.participantDid}`, {
+                  const messagesResponse = await fetch(`${API_URL}/dm/${conv.participantDid}`, {
                     credentials: 'include',
                     headers: {
                       'Accept': 'application/json',

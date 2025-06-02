@@ -160,7 +160,117 @@
   color: #4b5563;
   flex-grow: 1;
 }
+/* Real-time status indicator */
+.realTimeStatus {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  font-weight: 500;
+}
 
+.statusDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+  animation: pulse 2s infinite;
+}
+
+.connected {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.connected .statusDot {
+  background-color: #10b981;
+}
+
+.connecting {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.connecting .statusDot {
+  background-color: #f59e0b;
+}
+
+.failed {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.failed .statusDot {
+  background-color: #ef4444;
+}
+
+/* Animation for new messages */
+.newMessage {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hub button styling */
+.hubButton {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.hubButton:hover {
+  color: #3b82f6;
+}
+
+.hubIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Status indicator for posts */
+.statusIndicator {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+}
+
+/* New post animation */
+.newPost {
+  animation: slideInDown 0.5s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 /* Hub Button Styles */
 .hubButton {
   background: none;

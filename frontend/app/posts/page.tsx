@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_URL, checkBackendHealth } from '../../utils/api-config';
 import styling from './Posts.module.css';
 
 // Types
@@ -259,12 +260,24 @@ export default function PostsPage(): JSX.Element {
         }
     }, [newPostIds]);
 
+    // Check backend health periodically
+    useEffect(() => {
+        const checkHealth = async () => {
+            const status = await checkBackendHealth();
+            setBackendStatus(status);
+        };
+
+        checkHealth();
+        const intervalId = setInterval(checkHealth, 30000);
+        return () => clearInterval(intervalId);
+    }, []);
+
     const loadPosts = async () => {
         setIsLoading(true);
         setBackendStatus('connecting');
 
         try {
-            const response = await fetch('http://localhost:3001/posts', {
+            const response = await fetch(`${API_URL}/posts`, {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -378,7 +391,7 @@ export default function PostsPage(): JSX.Element {
                 privacyResult.processedContent.length
             );
 
-            const response = await fetch('http://localhost:3001/posts', {
+            const response = await fetch(`${API_URL}/posts`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
