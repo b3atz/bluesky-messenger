@@ -1,4 +1,4 @@
-// backend/src/app.ts - Updated to serve frontend in production
+// backend/src/app.ts - Complete fixed version with proper CORS
 import Fastify from "fastify";
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
@@ -74,14 +74,16 @@ const app = Fastify({
 
 console.log('🚀 Starting Enhanced Bluesky Messenger Backend...');
 
-// Update the CORS section in your backend/src/app.ts file:
-
+// FIXED CORS CONFIGURATION
 await app.register(cors, {
 	origin: (origin, callback) => {
-		// Allow requests with no origin (mobile apps, Postman, etc)
-		if (!origin) return callback(null, true);
+		// Always allow requests with no origin (mobile apps, curl, etc.)
+		if (!origin) {
+			console.log('✅ CORS: Allowing request with no origin');
+			return callback(null, true);
+		}
 
-		// List of allowed origins
+		// List of explicitly allowed origins
 		const allowedOrigins = [
 			'http://localhost:3000',
 			'http://127.0.0.1:3000',
@@ -89,27 +91,57 @@ await app.register(cors, {
 			'https://privacy-enhanced-bluesky-6a4a7cccefa2.herokuapp.com'
 		];
 
-		// Check if origin is in allowed list
+		// Check exact match first
 		if (allowedOrigins.includes(origin)) {
+			console.log(`✅ CORS: Allowing exact match origin: ${origin}`);
 			return callback(null, true);
 		}
 
-		// Allow any Heroku domain for development
-		if (origin.includes('herokuapp.com')) {
+		// Allow any herokuapp.com subdomain
+		if (origin.endsWith('.herokuapp.com')) {
+			console.log(`✅ CORS: Allowing Heroku origin: ${origin}`);
 			return callback(null, true);
 		}
 
-		// Allow localhost variations
-		if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+		// Allow localhost with any port
+		if (origin.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/)) {
+			console.log(`✅ CORS: Allowing localhost origin: ${origin}`);
 			return callback(null, true);
 		}
 
-		console.log('CORS blocked origin:', origin);
-		callback(new Error('Not allowed by CORS'), false);
+		// Log and reject unknown origins
+		console.log(`❌ CORS: Blocking origin: ${origin}`);
+		return callback(null, false); // Don't throw error, just return false
 	},
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
-	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Accept', 'Cache-Control'],
+	allowedHeaders: [
+		'Content-Type',
+		'Authorization',
+		'Cookie',
+		'Accept',
+		'Cache-Control',
+		'X-Requested-With',
+		'Origin',
+		'Referer',
+		'User-Agent'
+	],
+	optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+});
+
+// Explicit preflight handler for all routes
+app.options('*', async (request, reply) => {
+	const origin = request.headers.origin;
+
+	// Set CORS headers explicitly for preflight requests
+	reply.header('Access-Control-Allow-Origin', origin || '*');
+	reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD');
+	reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, Accept, Cache-Control, X-Requested-With, Origin, Referer, User-Agent');
+	reply.header('Access-Control-Allow-Credentials', 'true');
+	reply.header('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+
+	console.log(`✅ CORS Preflight: ${request.method} ${request.url} from ${origin}`);
+	return reply.code(200).send();
 });
 
 await app.register(cookie, {
@@ -238,20 +270,29 @@ const authenticate = async (request: any, reply: any) => {
 };
 
 // Routes
-app.get('/health', async () => ({
-	status: 'ok',
-	timestamp: new Date().toISOString(),
-	server: 'Enhanced Bluesky Messenger',
-	environment: process.env.NODE_ENV || 'development',
-	features: ['E2EE DMs', 'Privacy-Aware Posts', 'AT Protocol Integration'],
-	stats: {
-		users: users.size,
-		sessions: sessions.size,
-		conversations: conversations.size,
-		messages: messages.size,
-		posts: posts.size
+app.get('/health', async (request, reply) => {
+	// Add CORS headers to health check too
+	const origin = request.headers.origin;
+	if (origin) {
+		reply.header('Access-Control-Allow-Origin', origin);
+		reply.header('Access-Control-Allow-Credentials', 'true');
 	}
-}));
+
+	return {
+		status: 'ok',
+		timestamp: new Date().toISOString(),
+		server: 'Enhanced Bluesky Messenger',
+		environment: process.env.NODE_ENV || 'development',
+		features: ['E2EE DMs', 'Privacy-Aware Posts', 'AT Protocol Integration'],
+		stats: {
+			users: users.size,
+			sessions: sessions.size,
+			conversations: conversations.size,
+			messages: messages.size,
+			posts: posts.size
+		}
+	};
+});
 
 // Enhanced Auth Routes
 app.post('/auth/login', async (request, reply) => {
@@ -573,9 +614,68 @@ app.post('/dm', { preHandler: authenticate }, async (request: any, reply) => {
 	});
 });
 
+app.get('/dm/:did', { preHandler: authenticate }, async (request: any, reply) => {
+	const recipientDid = request.params.did;
+	const senderDid = request.user.did;
+
+	// Find conversation
+	const participants = [senderDid, recipientDid].sort();
+	const conversation = Array.from(conversations.values())
+		.find(conv =>
+			conv.participants.length === 2 &&
+			conv.participants.every(p => participants.includes(p))
+		);
+
+	if (!conversation) {
+		return [];
+	}
+
+	// Get messages
+	const conversationMessages = Array.from(messages.values())
+		.filter(msg => msg.conversationId === conversation.id)
+		.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+	const result = conversationMessages.map(msg => ({
+		id: msg.id,
+		from: msg.senderId,
+		to: msg.recipientId,
+		content: msg.content,
+		timestamp: msg.timestamp
+	}));
+
+	return result;
+});
+
+app.delete('/dm/:conversationId', { preHandler: authenticate }, async (request: any, reply) => {
+	const conversationId = request.params.conversationId;
+	const userDid = request.user.did;
+
+	const conversation = conversations.get(conversationId);
+	if (!conversation || !conversation.participants.includes(userDid)) {
+		return reply.code(404).send({ error: 'Conversation not found' });
+	}
+
+	// Delete messages
+	const conversationMessages = Array.from(messages.entries())
+		.filter(([_, msg]) => msg.conversationId === conversationId);
+
+	conversationMessages.forEach(([msgId, _]) => messages.delete(msgId));
+	conversations.delete(conversationId);
+
+	return { success: true, deletedMessages: conversationMessages.length };
+});
+
 // Error handlers
 app.setErrorHandler((error, request, reply) => {
 	app.log.error(error);
+
+	// Add CORS headers even to error responses
+	const origin = request.headers.origin;
+	if (origin) {
+		reply.header('Access-Control-Allow-Origin', origin);
+		reply.header('Access-Control-Allow-Credentials', 'true');
+	}
+
 	reply.status(500).send({ error: 'Internal Server Error' });
 });
 
