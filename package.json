@@ -11,12 +11,13 @@
     "scripts": {
         "start": "node backend/dist/index.js",
         "build": "npm run install:all && npm run build:frontend && npm run build:backend && npm run copy:frontend",
+        "build:clean": "rm -rf frontend/.next && rm -rf frontend/out && npm run build",
         "build:backend": "cd backend && npm run build",
         "build:frontend": "cd frontend && npm run build",
         "copy:frontend": "mkdir -p backend/dist/frontend && cp -r frontend/.next/standalone/* frontend/.next/static backend/dist/frontend/ 2>/dev/null || cp -r frontend/out/* backend/dist/frontend/ 2>/dev/null || echo 'Frontend copy failed, trying alternative...' && mkdir -p backend/dist/public && cp -r frontend/out/* backend/dist/public/ 2>/dev/null || true",
         "dev": "cd backend && npm run dev",
         "dev:frontend": "cd frontend && npm run dev",
-        "heroku-postbuild": "npm run build",
+        "heroku-postbuild": "rm -rf frontend/.next && rm -rf frontend/out && npm run build",
         "install:all": "npm install --prefix backend && npm install --prefix frontend",
         "postinstall": "npm run install:all"
     },
