@@ -1,8 +1,11 @@
+// Updated LoginBox.tsx component with debug logging and session validation
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BskyAgent } from '@atproto/api';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../contexts/AuthContext';
 import styles from './LoginBox.module.css';
 
 // Enhanced error messages
@@ -25,74 +28,67 @@ Your encryption keys are generated locally and stored only on your device.
 `;
 
 export default function LoginBox() {
+    const { login, isAuthenticated, user, loading } = useAuth();
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPrivacy, setShowPrivacy] = useState(false);
-    const [debugInfo, setDebugInfo] = useState<string | null>(null);
+    const [debugInfo, setDebugInfo] = useState<string>('');
     const [demoMode, setDemoMode] = useState(false);
     const router = useRouter();
 
+    // Add debug logging
+    const logDebug = (message: string) => {
+        console.log(message);
+        setDebugInfo(prev => `${new Date().toISOString().substring(11, 19)} - ${message}\n${prev}`);
+    };
+
+    // Check if user is already authenticated
+    useEffect(() => {
+        // Check if already authenticated and redirect if so
+        if (isAuthenticated && user) {
+            logDebug(`Already authenticated as ${user.handle}, redirecting to messages`);
+            router.push('/messages');
+        } else {
+            logDebug('Not authenticated or no user data');
+
+            // Check for existing session in localStorage as a fallback
+            try {
+                const existingSession = localStorage.getItem('bsky_session');
+                if (existingSession) {
+                    const sessionData = JSON.parse(existingSession);
+                    if (sessionData?.did && sessionData?.handle) {
+                        logDebug(`Found session in localStorage for ${sessionData.handle}, attempting to use it`);
+                    }
+                } else {
+                    logDebug('No existing session found in localStorage');
+                }
+            } catch (e) {
+                logDebug(`Error checking localStorage: ${e instanceof Error ? e.message : 'Unknown error'}`);
+            }
+        }
+    }, [isAuthenticated, user, router]);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
-        setDebugInfo(null);
+
+        logDebug(`Attempting login for ${identifier}...`);
 
         try {
-            // Create a new Bluesky agent
-            const agent = new BskyAgent({
-                service: 'https://bsky.social',
-            });
+            if (demoMode) {
+                logDebug('Using demo mode login');
+                handleDemoLogin();
+                return;
+            }
 
-            console.log('Attempting to connect to Bluesky API...');
-            setDebugInfo('Connecting to Bluesky API...');
+            // Try to login using the auth context
+            const success = await login(identifier, password);
 
-            // Attempt to log in with the provided credentials
-            const result = await agent.login({
-                identifier,
-                password,
-            }).catch(err => {
-                console.error('API call error:', err);
-                setDebugInfo(`API call error: ${err.message || 'Unknown error'}`);
-                throw err;
-            });
-
-            // If login is successful, save the session data
-            if (result.success) {
-                console.log('Login successful, storing session');
-                setDebugInfo('Login successful, storing session');
-
-                // Store session data in localStorage
-                localStorage.setItem('bsky_session', JSON.stringify(agent.session));
-
-                // Make a request to our own backend to establish user
-                try {
-                    console.log('Registering with messaging server...');
-                    setDebugInfo('Registering with messaging server...');
-
-                    const response = await fetch('http://localhost:3001/auth/login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            did: agent.session?.did,
-                            handle: agent.session?.handle,
-                        }),
-                        credentials: 'include',
-                    });
-
-                    if (!response.ok) {
-                        console.warn('Failed to register with messaging server, but continuing');
-                        setDebugInfo('Warning: Failed to register with messaging server, but continuing');
-                    }
-                } catch (err) {
-                    console.error('Error registering with messaging server:', err);
-                    setDebugInfo(`Warning: Error registering with messaging server: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                    // We can continue even if our backend registration fails
-                }
+            if (success) {
+                logDebug('Login successful! Redirecting to messages page');
 
                 // Add animation class before redirect
                 document.querySelector(`.${styles.loginContainer}`)?.classList.add(styles.exitAnimation);
@@ -100,48 +96,40 @@ export default function LoginBox() {
                 // Delay redirect to show animation
                 setTimeout(() => {
                     // Redirect to the messages page
-                    router.push('/messages');
+                    router.push('/hub');
                 }, 500);
             } else {
-                console.error('Login failed, no success flag in response');
-                setDebugInfo('Login failed, no success flag in response');
+                logDebug('Login failed - check credentials');
                 setError(ERROR_MESSAGES.INVALID_CREDENTIALS);
             }
         } catch (err) {
             console.error('Login error:', err);
+            logDebug(`Login error: ${err instanceof Error ? err.message : 'Unknown error'}`);
 
             let errorMessage = ERROR_MESSAGES.UNKNOWN_ERROR;
-            let debugMsg = err instanceof Error ? err.message : 'Unknown error';
 
             if (err instanceof Error) {
-                setDebugInfo(`Error details: ${err.message}`);
-
                 if (err.message.includes('network') || err.message.includes('connect') || err.message.includes('ECONNREFUSED')) {
                     errorMessage = ERROR_MESSAGES.CONNECTION_ERROR;
-                    debugMsg = 'Network connection error. Check if backend server is running.';
                 } else if (err.message.includes('Authentication') || err.message.includes('credentials')) {
                     errorMessage = ERROR_MESSAGES.INVALID_CREDENTIALS;
-                    debugMsg = 'Authentication failed - invalid credentials';
                 } else if (err.message.includes('429') || err.message.includes('rate limit')) {
                     errorMessage = ERROR_MESSAGES.RATE_LIMIT;
-                    debugMsg = 'Rate limit exceeded';
                 } else if (err.message.includes('500') || err.message.includes('server error')) {
                     errorMessage = ERROR_MESSAGES.SERVER_ERROR;
-                    debugMsg = 'Bluesky API server error';
                 }
             }
 
-            setDebugInfo(debugMsg);
             setError(errorMessage);
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const handleDemoLogin = () => {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
-        setDebugInfo('Demo Mode: Creating simulated session...');
+        logDebug('Demo Mode: Creating simulated session...');
 
         // Create a simulated session
         setTimeout(() => {
@@ -157,6 +145,8 @@ export default function LoginBox() {
             // Store mock session
             localStorage.setItem('bsky_session', JSON.stringify(mockSession));
 
+            logDebug('Demo session created, redirecting to messages');
+
             // Add animation class before redirect
             document.querySelector(`.${styles.loginContainer}`)?.classList.add(styles.exitAnimation);
 
@@ -165,7 +155,7 @@ export default function LoginBox() {
                 router.push('/messages');
             }, 500);
 
-            setLoading(false);
+            setIsLoading(false);
         }, 1500);
     };
 
@@ -200,14 +190,17 @@ export default function LoginBox() {
                     </div>
                 )}
 
+                {/* Debug info */}
+                {/*
                 {debugInfo && (
-                    <div className={styles.debugInfo}>
+                    <div className={styles.debugInfo || 'bg-gray-800 text-xs text-gray-300 p-1 max-h-20 overflow-auto font-mono'}>
                         <details>
-                            <summary>Debug Info</summary>
-                            <pre>{debugInfo}</pre>
+                            <summary className="cursor-pointer p-1 bg-gray-700">Debug Log</summary>
+                            <pre className="p-1 whitespace-pre-wrap">{debugInfo}</pre>
                         </details>
                     </div>
                 )}
+                */}
 
                 <form className={styles.form} onSubmit={handleLogin}>
                     <div className={styles.inputGroup}>
@@ -260,10 +253,10 @@ export default function LoginBox() {
                     <div className={styles.buttonGroup}>
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={isLoading}
                             className={styles.submitButton}
                         >
-                            {loading ? (
+                            {isLoading ? (
                                 <span className={styles.loadingContainer}>
                                     <svg className={styles.loadingSpinner} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className={styles.loadingCircle} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -274,15 +267,6 @@ export default function LoginBox() {
                             ) : (
                                 'Sign in'
                             )}
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={handleDemoLogin}
-                            className={styles.demoButton}
-                            disabled={loading}
-                        >
-                            Demo Mode
                         </button>
                     </div>
                 </form>

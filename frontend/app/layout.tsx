@@ -1,6 +1,6 @@
 // frontend/app/layout.tsx
 import { Inter } from "next/font/google";
-import { AuthProvider } from "contexts/AuthContext";
+import { AuthProvider } from "../contexts/AuthContext";
 
 // Import global CSS
 import "./globals.css";

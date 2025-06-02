@@ -1,0 +1,1034 @@
+/* File: frontend/app/posts/Posts.module.css */
+
+.container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #1f2937;
+  }
+  
+  .loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  }
+  
+  .loadingSpinner {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 20px;
+  }
+  
+  .loadingCircle {
+    animation: loading 1.5s ease-in-out infinite;
+    stroke: #3b82f6;
+    stroke-linecap: round;
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: 0;
+    transform-origin: center;
+  }
+  
+  @keyframes loading {
+    0% {
+      transform: rotate(0deg);
+      stroke-dasharray: 1, 150;
+      stroke-dashoffset: 0;
+    }
+    50% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -35;
+    }
+    100% {
+      transform: rotate(360deg);
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -124;
+    }
+  }
+  
+  .loadingText {
+    font-size: 1rem;
+    color: #4b5563;
+    font-weight: 500;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+  
+  /* Header */
+  .header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  
+  .headerContent {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  /* Navigation Buttons */
+  .navigationButtons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .hubButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+  
+  .hubButton:hover {
+    color: #3b82f6;
+    background-color: #f3f4f6;
+  }
+  
+  .hubButton svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  
+  .headerTitle {
+    text-align: center;
+    flex-grow: 1;
+  }
+  
+  .headerTitle h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 0.25rem 0;
+  }
+  
+  .headerTitle p {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  /* Status Indicator */
+  .statusIndicator {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+  
+  .statusIndicator.connected {
+    background-color: #dcfce7;
+    color: #166534;
+  }
+  
+  .statusIndicator.connecting {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+  
+  .statusIndicator.failed {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+  
+  .privacyIndicator {
+    display: flex;
+    align-items: center;
+  }
+  
+  .privacyBadge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f3f4f6;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .privacyLabel {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .privacyMeter {
+    width: 60px;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  
+  .privacyFill {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+    transition: width 0.3s ease;
+  }
+  
+  .privacyValue {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+  }
+  
+  /* Main Content */
+  .mainContent {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  /* Create Post Card */
+  .createPostCard {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  
+  .createPostHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 0 1.5rem;
+  }
+  
+  .createPostHeader h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+  }
+  
+  .privacySettingsToggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .privacySettingsToggle:hover {
+    background-color: #2563eb;
+  }
+  
+  .privacySettingsToggle svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  
+  /* Privacy Settings */
+  .privacySettings {
+    padding: 2rem;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .settingsGrid {
+    display: grid;
+    gap: 2rem;
+    overflow: visible;
+  }
+  
+  .settingGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow: visible;
+  }
+  
+  .settingLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+  
+  .settingHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .settingBadge {
+    background: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .settingDescription {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+  }
+  
+  /* Access Level Grid */
+  .accessLevelGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .accessLevelButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  
+  .accessLevelButton:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  .accessLevelButton.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .accessIcon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .accessLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+  }
+  
+  .accessDescription {
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.3;
+  }
+  
+  /* PII Level Selector */
+  .piiLevelSelector {
+    margin-top: 0.5rem;
+  }
+  
+  .piiOptions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .piiOption {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .piiOption:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+  }
+  
+  .piiOption.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+  
+  .piiLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+  }
+  
+  .piiDescription {
+    font-size: 0.625rem;
+    color: #6b7280;
+    line-height: 1.2;
+  }
+  
+  /* Epsilon Slider */
+  .epsilonSlider {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .slider {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sliderLabels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  /* Create Post Form */
+  .createPostForm {
+    padding: 1.5rem;
+  }
+  
+  .titleInput {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  
+  .titleInput:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .contentTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 100px;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  
+  .contentTextarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .postActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .postMetrics {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .accessLevelBadge,
+  .privacyBadge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .privacyBadge {
+    background: #8b5cf6;
+  }
+  
+  .postButton {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.625rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .postButton:hover:not(:disabled) {
+    background: #2563eb;
+  }
+  
+  .postButton:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+  
+  /* Posts Container */
+  .postsContainer {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  .postsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .postsHeader h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+  }
+  
+  .postCount {
+    font-size: 0.875rem;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+  }
+  
+  /* Empty State */
+  .emptyState {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  
+  .emptyIcon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .emptyState h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+  
+  .emptyState p {
+    color: #6b7280;
+    margin: 0;
+  }
+  
+  /* Posts List */
+  .postsList {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .postCard {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s;
+  }
+  
+  .postCard:hover {
+    background-color: #fafbfc;
+  }
+  
+  .postCard:last-child {
+    border-bottom: none;
+  }
+  
+  .postCard.newPost {
+    animation: newPostHighlight 2s ease-out;
+  }
+  
+  @keyframes newPostHighlight {
+    0% {
+      background-color: #dbeafe;
+      transform: scale(1.01);
+    }
+    100% {
+      background-color: transparent;
+      transform: scale(1);
+    }
+  }
+  
+  .postHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  
+  .postAuthor {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .authorAvatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  .authorInfo {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .authorHandle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1f2937;
+  }
+  
+  .postTime {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+  
+  .postBadges {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .accessBadge,
+  .privacyScoreBadge,
+  .noiseBadge,
+  .blueskyBadge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .noiseBadge {
+    background: #8b5cf6;
+  }
+  
+  .blueskyBadge {
+    background: #059669;
+  }
+  
+  .postContent {
+    margin-bottom: 1rem;
+  }
+  
+  .postTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .postText {
+    color: #374151;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+  
+  .postFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .privacyInfo {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .privacyLabel {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+  
+  .privacyFeature {
+    font-size: 0.75rem;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+  }
+  
+  .postLinks {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+  
+  .blueskyLink {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  
+  .blueskyLink:hover {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .headerContent {
+      padding: 1rem;
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
+    .navigationButtons {
+      align-self: flex-start;
+      width: 100%;
+    }
+  
+    .headerTitle {
+      order: -1;
+      text-align: center;
+    }
+  
+    .privacyIndicator {
+      align-self: flex-end;
+    }
+  
+    .mainContent {
+      padding: 1rem;
+    }
+  
+    .accessLevelGrid {
+      grid-template-columns: 1fr;
+    }
+  
+    .postActions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+  
+    .postMetrics {
+      justify-content: center;
+    }
+  
+    .postHeader {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  
+    .postBadges {
+      align-self: flex-start;
+    }
+  
+    .postFooter {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+  
+    .hubButton {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.8rem;
+    }
+  
+    .hubButton svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+  
+  /* Dark Mode Support */
+  @media (prefers-color-scheme: dark) {
+    .container {
+      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+      color: #f9fafb;
+    }
+  
+    .loadingContainer {
+      background: linear-gradient(135deg, #111827, #1f2937);
+    }
+  
+    .loadingText {
+      color: #e5e7eb;
+    }
+  
+    .header {
+      background: #1f2937;
+      border-bottom-color: #374151;
+    }
+  
+    .headerTitle h1 {
+      color: #f9fafb;
+    }
+  
+    .headerTitle p {
+      color: #d1d5db;
+    }
+  
+    .hubButton {
+      color: #9ca3af;
+    }
+  
+    .hubButton:hover {
+      color: #60a5fa;
+      background-color: #374151;
+    }
+  
+    .statusIndicator.connected {
+      background-color: #064e3b;
+      color: #6ee7b7;
+    }
+  
+    .statusIndicator.connecting {
+      background-color: #451a03;
+      color: #fbbf24;
+    }
+  
+    .statusIndicator.failed {
+      background-color: #7f1d1d;
+      color: #fca5a5;
+    }
+  
+    .privacyBadge {
+      background: #374151;
+      border-color: #4b5563;
+    }
+  
+    .privacyLabel {
+      color: #9ca3af;
+    }
+  
+    .privacyValue {
+      color: #e5e7eb;
+    }
+  
+    .createPostCard,
+    .postsContainer {
+      background: #374151;
+    }
+  
+    .createPostHeader h2,
+    .postsHeader h2 {
+      color: #f9fafb;
+    }
+  
+    .privacySettings {
+      background: #4b5563;
+      border-top-color: #6b7280;
+      border-bottom-color: #6b7280;
+    }
+  
+    .settingLabel {
+      color: #e5e7eb;
+    }
+  
+    .settingDescription {
+      color: #d1d5db;
+    }
+  
+    .accessLevelButton,
+    .piiOption {
+      background: #4b5563;
+      border-color: #6b7280;
+      color: #f9fafb;
+    }
+  
+    .accessLevelButton:hover,
+    .piiOption:hover {
+      border-color: #9ca3af;
+      background: #6b7280;
+    }
+  
+    .accessLevelButton.selected,
+    .piiOption.selected {
+      background: #1e3a8a;
+      border-color: #60a5fa;
+    }
+  
+    .accessLabel,
+    .piiLabel {
+      color: #f9fafb;
+    }
+  
+    .accessDescription,
+    .piiDescription {
+      color: #d1d5db;
+    }
+  
+    .titleInput,
+    .contentTextarea {
+      background: #4b5563;
+      border-color: #6b7280;
+      color: #f9fafb;
+    }
+  
+    .titleInput:focus,
+    .contentTextarea:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    }
+  
+    .postCount {
+      background: #4b5563;
+      color: #d1d5db;
+    }
+  
+    .postCard:hover {
+      background-color: #4b5563;
+    }
+  
+    .postCard.newPost {
+      animation: newPostHighlightDark 2s ease-out;
+    }
+  
+    @keyframes newPostHighlightDark {
+      0% {
+        background-color: #1e3a8a;
+        transform: scale(1.01);
+      }
+      100% {
+        background-color: transparent;
+        transform: scale(1);
+      }
+    }
+  
+    .authorHandle,
+    .postTitle {
+      color: #f9fafb;
+    }
+  
+    .postTime {
+      color: #9ca3af;
+    }
+  
+    .postText {
+      color: #e5e7eb;
+    }
+  
+    .privacyLabel {
+      color: #9ca3af;
+    }
+  
+    .privacyFeature {
+      background: #064e3b;
+      color: #6ee7b7;
+    }
+  
+    .emptyState h3 {
+      color: #f9fafb;
+    }
+  
+    .emptyState p {
+      color: #9ca3af;
+    }
+  
+    .blueskyLink {
+      color: #60a5fa;
+    }
+  
+    .blueskyLink:hover {
+      color: #93c5fd;
+    }
+  }

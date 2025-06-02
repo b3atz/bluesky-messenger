@@ -3,9 +3,9 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from 'contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 // Use lowercase 'messages' to match the file name case
-import Messages from 'components/messages/messages';
+import Messages from '../../components/messages/messages';
 
 export default function MessagesPage(): JSX.Element {
   const { isAuthenticated, loading } = useAuth();

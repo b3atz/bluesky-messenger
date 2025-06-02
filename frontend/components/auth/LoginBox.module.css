@@ -478,28 +478,4 @@
   .submitButton {
     flex: 1;
   }
-
-  .demoButton {
-    padding: 0.625rem;
-    background-color: #475569;
-    color: white;
-    font-weight: 500;
-    border: none;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-  }
-
-  .demoButton:hover {
-    background-color: #334155;
-  }
-
-  .demoButton:active {
-    transform: scale(0.98);
-  }
-
-  .demoButton:disabled {
-    background-color: #64748b;
-    cursor: not-allowed;
-  }
 }

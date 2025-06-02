@@ -2,5 +2,9 @@
   "css.validate": false,
   "less.validate": false,
   "scss.validate": false,
-  "tailwindCSS.emmetCompletions": true
-}   
+  "tailwindCSS.emmetCompletions": true,
+  "eslint.workingDirectories": [
+    "backend",
+    "frontend"
+  ]
+}

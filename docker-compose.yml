@@ -1,20 +1,43 @@
-version: '3.9'
+version: '3.8'
 
 services:
   backend:
-    build:
+    build: 
       context: ./backend
-    environment:
-      HOST: 0.0.0.0
-      PORT: 8080
-      NODE_ENV: development
-      PASSWORD: password
+    container_name: bluesky-messenger-backend
+    restart: always
     ports:
-      - "8080:8080"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - HOST=0.0.0.0
+      - PUBLIC_URL=http://localhost:3001
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef} # Default key for dev
+      - PRIVATE_KEY_1=${PRIVATE_KEY_1:-default-dev-key} # Replace in production
+    volumes:
+      - ./backend/data:/app/data
+    networks:
+      - app-network
+
   frontend:
     build:
       context: ./frontend
+      # Add build args if needed
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:3001
+    container_name: bluesky-messenger-frontend
+    restart: always
     ports:
       - "3000:3000"
     environment:
-      NODE_ENV: production
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,36 +1,85 @@
+// backend/src/index.ts - Updated for Heroku deployment
 import dotenv from "dotenv";
 import app from "./app.js";
-import { MikroORM } from "@mikro-orm/core";
-import config from "./mikro-orm.config.js";
-import { PostSeeder } from "./db/seeder/postSeeder.js";
 
+// Load environment variables
 dotenv.config();
 
 async function bootstrap() {
   try {
-    const orm = await MikroORM.init(config);
+    console.log('🚀 Starting Bluesky Messenger Backend...');
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
-    
-    await orm.getMigrator().up();
+    // Heroku sets HOST to 0.0.0.0 and provides PORT
+    const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : (process.env.HOST || '127.0.0.1');
+    const PORT = Number(process.env.PORT) || 3001;
 
-    const postCount = await orm.em.count('Post');
-    if (postCount === 0) {
-      const seeder = orm.getSeeder();
-      await seeder.seed(PostSeeder);
-      console.log('Seeded initial post data');
-    }
+    console.log(`🔧 Host: ${HOST}`);
+    console.log(`🚪 Port: ${PORT}`);
 
-    
+    // Start the server
     await app.listen({
-      port: Number(process.env.PORT),
-      host: process.env.HOST
+      port: PORT,
+      host: HOST
     });
 
-    app.log.info(`Started server at http://${process.env.HOST}:${process.env.PORT}`);
+    const serverUrl = process.env.NODE_ENV === 'production'
+      ? `https://${process.env.HEROKU_APP_NAME || 'your-app'}.herokuapp.com`
+      : `http://${HOST}:${PORT}`;
+
+    console.log(`✅ Server successfully started!`);
+    console.log(`🌐 Server URL: ${serverUrl}`);
+    console.log(`🏥 Health Check: ${serverUrl}/health`);
+    console.log(`🐛 Debug Endpoint: ${serverUrl}/auth/debug`);
+    console.log('');
+    console.log('📝 Available endpoints:');
+    console.log('   GET  /health           - Health check');
+    console.log('   GET  /auth/debug       - Debug session status');
+    console.log('   POST /auth/login       - Login with DID and handle');
+    console.log('   POST /auth/logout      - Logout');
+    console.log('   GET  /posts            - Get posts');
+    console.log('   POST /posts            - Create post (with Bluesky integration!)');
+    console.log('   GET  /posts/test-bluesky - Test AT Protocol connection');
+    console.log('   GET  /dm               - Get conversations');
+    console.log('   POST /dm               - Send message');
+    console.log('   GET  /dm/:did          - Get messages with specific user');
+    console.log('   DELETE /dm/:convId     - Delete conversation');
+    console.log('');
+    console.log('🎯 Ready to accept connections from frontend!');
+
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🚀 Production mode: AT Protocol integration active!');
+    }
+
   } catch (err) {
-    console.error("Error starting app:", err);
+    console.error("💥 Error starting server:", err);
     process.exit(1);
   }
 }
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Received SIGINT. Shutting down gracefully...');
+  try {
+    await app.close();
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ Error during shutdown:', err);
+    process.exit(1);
+  }
+});
+
+process.on('SIGTERM', async () => {
+  console.log('\n🛑 Received SIGTERM. Shutting down gracefully...');
+  try {
+    await app.close();
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ Error during shutdown:', err);
+    process.exit(1);
+  }
+});
 
 bootstrap();

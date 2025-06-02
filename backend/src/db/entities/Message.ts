@@ -1,23 +1,25 @@
+// Fixed src/db/entities/Message.ts
+
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
 @Entity()
 export class Message {
-  @PrimaryKey()
+  @PrimaryKey({ type: 'number' })
   id!: number;
 
-  @Property()
+  @Property({ type: 'string' })
   senderDid!: string;
 
-  @Property()
+  @Property({ type: 'string' })
   recipientDid!: string;
 
-  @Property()
+  @Property({ type: 'string' })
   content!: string; // encrypted
 
-  @Property()
+  @Property({ type: 'string' })
   iv!: string; // hex string
 
-  @Property()
+  @Property({ type: 'datetime' })
   createdAt: Date = new Date();
 
   constructor(senderDid: string, recipientDid: string, content: string, iv: string) {
