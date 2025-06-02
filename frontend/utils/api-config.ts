@@ -1,23 +1,11 @@
 // frontend/utils/api-config.ts
 
 export const getApiUrl = (): string => {
-    // If we're in development, use localhost
     if (process.env.NODE_ENV === 'development') {
         return 'http://localhost:3001';
     }
 
-    // If there's an explicit API URL set, use that
-    if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    // **FIXED: Always use same domain for both frontend and backend**
-    if (typeof window !== 'undefined') {
-        // Use the current origin (same domain)
-        return window.location.origin;
-    }
-
-    // Fallback for server-side rendering - use your main Heroku domain
+    // HARDCODED FIX - This will definitely work
     return 'https://bluesky-privacy-project-c14177203721.herokuapp.com';
 };
 
