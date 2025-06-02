@@ -1,4 +1,4 @@
-// backend/src/app.ts - Complete fixed version with proper CORS
+// backend/src/app.ts - Fixed version without duplicate OPTIONS handler
 import Fastify from "fastify";
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
@@ -74,7 +74,7 @@ const app = Fastify({
 
 console.log('🚀 Starting Enhanced Bluesky Messenger Backend...');
 
-// FIXED CORS CONFIGURATION
+// FIXED CORS CONFIGURATION - Let the plugin handle OPTIONS automatically
 await app.register(cors, {
 	origin: (origin, callback) => {
 		// Always allow requests with no origin (mobile apps, curl, etc.)
@@ -126,22 +126,9 @@ await app.register(cors, {
 		'Referer',
 		'User-Agent'
 	],
-	optionsSuccessStatus: 200 // Some legacy browsers choke on 204
-});
-
-// Explicit preflight handler for all routes
-app.options('*', async (request, reply) => {
-	const origin = request.headers.origin;
-
-	// Set CORS headers explicitly for preflight requests
-	reply.header('Access-Control-Allow-Origin', origin || '*');
-	reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD');
-	reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, Accept, Cache-Control, X-Requested-With, Origin, Referer, User-Agent');
-	reply.header('Access-Control-Allow-Credentials', 'true');
-	reply.header('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
-
-	console.log(`✅ CORS Preflight: ${request.method} ${request.url} from ${origin}`);
-	return reply.code(200).send();
+	optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+	preflightContinue: false, // Let CORS plugin handle preflight completely
+	maxAge: 86400 // Cache preflight for 24 hours
 });
 
 await app.register(cookie, {
@@ -271,13 +258,6 @@ const authenticate = async (request: any, reply: any) => {
 
 // Routes
 app.get('/health', async (request, reply) => {
-	// Add CORS headers to health check too
-	const origin = request.headers.origin;
-	if (origin) {
-		reply.header('Access-Control-Allow-Origin', origin);
-		reply.header('Access-Control-Allow-Credentials', 'true');
-	}
-
 	return {
 		status: 'ok',
 		timestamp: new Date().toISOString(),
@@ -668,14 +648,6 @@ app.delete('/dm/:conversationId', { preHandler: authenticate }, async (request: 
 // Error handlers
 app.setErrorHandler((error, request, reply) => {
 	app.log.error(error);
-
-	// Add CORS headers even to error responses
-	const origin = request.headers.origin;
-	if (origin) {
-		reply.header('Access-Control-Allow-Origin', origin);
-		reply.header('Access-Control-Allow-Credentials', 'true');
-	}
-
 	reply.status(500).send({ error: 'Internal Server Error' });
 });
 
